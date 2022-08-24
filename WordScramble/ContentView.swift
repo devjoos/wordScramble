@@ -14,11 +14,18 @@ struct ContentView: View {
     @State private var errorTitle = ""
     @State private var errorMessage = ""
     @State private var showingError = false
+    @State private var score = 0
+    @State private var wordList = 0
     
     
     var body: some View {
         NavigationView {
             List {
+                Section("Your score") {
+                    Text("letters used: \(score)")
+                    Text("Words used: \(wordList)")
+                    Text("Total score: \(score + wordList)")
+                }
                 Section {
                     TextField("Enter your word", text: $newWord)
                         .textInputAutocapitalization(.never)
@@ -33,6 +40,11 @@ struct ContentView: View {
                 }
             }
             .navigationTitle(rootWord)
+            .toolbar {
+                ToolbarItem(id: "huh", placement: .bottomBar) {
+                    Button("Start New Game") { startGame() }
+                }
+            }
             .onSubmit {
                 addNewWord()
                 
@@ -50,7 +62,11 @@ struct ContentView: View {
     func addNewWord() {
         let answer = newWord.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
-        guard answer.count > 0 else { return }
+        guard answer.count > 2 && !(answer == rootWord) else {
+            wordError(title: "Invalid", message: "Please used words longer than 2 characters and/or use a word not the same as '\(rootWord)' ")
+            return
+        }
+        
         
         guard isOriginal(word: answer) else {
             wordError(title: "Word used already", message: "Be more original")
@@ -67,12 +83,21 @@ struct ContentView: View {
             return
         }
         
+        score += answer.count
+        wordList = usedWords.count + 1
+        
+        
         withAnimation {
             usedWords.insert(answer, at: 0)
         }
         newWord = ""
     }
     func startGame() {
+        rootWord = ""
+        score = 0
+        wordList = 0
+        usedWords = [String]()
+        
         if let startWordsURL = Bundle.main.url(forResource: "start", withExtension: "txt") {
             if let startWords = try? String(contentsOf: startWordsURL) {
                 let allwords = startWords.components(separatedBy: "\n")
